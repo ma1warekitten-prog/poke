@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TCG Duel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a1a2e;
+            color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .player-area {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .player-area.player-1 {
+            flex-direction: column;
+        }
+
+        .player-area.player-2 {
+            flex-direction: column-reverse;
+        }
+
+        .board-zone {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            background-color: #24243e;
+            border-radius: 12px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        .zone {
+            border: 2px dashed #4a4a7a;
+            border-radius: 8px;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-weight: bold;
+            color: #8c8cbe;
+            position: relative;
+        }
+
+        .card-slot {
+            height: 140px;
+            width: 100px;
+        }
+
+        .hand-zone {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            padding: 15px;
+            background-color: #16213e;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            transition: all 0.3s ease;
+            min-height: 150px;
+        }
+
+        .hand-zone.player-1 {
+            flex-direction: row;
+        }
+
+        .hand-zone.player-2 {
+            flex-direction: row;
+        }
+
+        .hand-card {
+            width: 100px;
+            height: 140px;
+            background-color: #4a4a7a;
+            border: 2px solid #6b6b9e;
+            border-radius: 8px;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 5px;
+            font-size: 0.7rem;
+        }
+        .hand-card.character-card { background-color: #55a29b; }
+        .hand-card.support-card { background-color: #9b55a2; }
+        .hand-card.event-card { background-color: #a29b55; }
+        .hand-card.equipment-card { background-color: #9ba255; }
+
+        .hand-card:hover {
+            transform: scale(1.05) translateY(-5px);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.6);
+        }
+
+        .card-back {
+            background-color: #31315e;
+            color: #8c8cbe;
+        }
+
+        .card-title {
+            font-weight: bold;
+            font-size: 0.8rem;
+            margin-bottom: 5px;
+        }
+
+        .deck-zone, .discard-zone {
+            width: 80px;
+            height: 120px;
+            border: 2px solid #4a4a7a;
+            background-color: #31315e;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            color: #8c8cbe;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .active-character-zone {
+            width: 200px;
+            height: 280px;
+            background-color: #4a4a7a;
+            border: 4px solid #7c7cb3;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            padding: 10px;
+        }
+
+        .active-character-card {
+            width: 100%;
+            height: 100%;
+            background-color: #55a29b;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .active-character-card.opponent {
+            transform: rotate(180deg);
+        }
+
+        .character-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        .character-skills {
+            font-size: 0.8rem;
+            margin-top: 10px;
+        }
+
+        .hp-bar {
+            width: 100%;
+            height: 10px;
+            background-color: #e74c3c;
+            border-radius: 5px;
+            margin-top: 5px;
+        }
+
+        .hp-bar-fill {
+            height: 100%;
+            background-color: #2ecc71;
+            border-radius: 5px;
+            transition: width 0.5s ease;
+        }
+
+        .skill-button {
+            background-color: #3498db;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+            font-size: 0.7rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            margin-top: 5px;
+        }
+
+        .skill-button:hover {
+            background-color: #2980b9;
+            transform: translateY(-1px);
+        }
+
+        .skill-button:disabled {
+            background-color: #7f8c8d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 20px 40px;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+            z-index: 1000;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .dice-area {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+            justify-content: center;
+        }
+
+        .die {
+            width: 30px;
+            height: 30px;
+            background-color: #f39c12;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        .die:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+        }
+
+        .die.active {
+            border: 2px solid #3498db;
+            box-shadow: 0 0 10px #3498db;
+        }
+
+        .dice-container {
+            padding: 15px;
+            background-color: #2c3e50;
+            border-radius: 12px;
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.5);
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+            align-items: center;
+        }
+
+        .game-info {
+            background-color: #2c3e50;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .game-button {
+            background-color: #e74c3c;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .game-button:hover {
+            background-color: #c0392b;
+            transform: translateY(-2px);
+        }
+
+        .game-button:disabled {
+            background-color: #7f8c8d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .board-center-area {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .game-container {
+                display: grid;
+                grid-template-areas:
+                    "hand2 board2"
+                    "hand1 board1";
+                grid-template-rows: 1fr 1fr;
+                grid-template-columns: 200px 1fr;
+            }
+
+            .player-area.player-1 {
+                grid-area: board1;
+                flex-direction: row;
+            }
+
+            .player-area.player-2 {
+                grid-area: board2;
+                flex-direction: row-reverse;
+            }
+
+            .hand-zone.player-1 {
+                grid-area: hand1;
+                flex-direction: column;
+            }
+
+            .hand-zone.player-2 {
+                grid-area: hand2;
+                flex-direction: column;
+            }
+
+            .active-character-zone {
+                width: 250px;
+                height: 350px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="game-container">
+
+    <!-- Player 2 Area -->
+    <div class="hand-zone player-2" id="player2-hand">
+        <div class="deck-zone">Deck (<span id="p2-deck-count">0</span>)</div>
+        <div class="discard-zone">Discard (<span id="p2-discard-count">0</span>)</div>
+    </div>
+    <div class="player-area player-2">
+        <div class="board-zone">
+            <div class="zone card-slot" id="p2-support-zone">Support Zone</div>
+            <div class="zone card-slot" id="p2-summons-zone">Summons Zone</div>
+            <div class="zone dice-container" id="p2-dice-area">
+                <p class="font-bold">Dice</p>
+                <div id="p2-dice-display" class="dice-area"></div>
+            </div>
+            <div class="zone card-slot" id="p2-basic-skill-zone">Basic Skill Space</div>
+            <div class="zone active-character-zone" id="p2-active-zone">
+                <div class="card-back">Active Character Zone</div>
+            </div>
+            <div class="zone" style="height: 120px; width: 120px;" id="p2-inactive-zone">Inactive Characters</div>
+        </div>
+    </div>
+
+    <!-- Game Controls and Info -->
+    <div class="game-info">
+        <p>Current Turn: <span id="current-player-display">Player 1</span></p>
+        <p>Current Phase: <span id="current-phase-display">Roll Phase</span></p>
+        <p>Current Round: <span id="current-round-display">1</span></p>
+        <div class="controls">
+            <div id="action-buttons" class="flex flex-col gap-4 items-center">
+                <button class="game-button bg-blue-500 hover:bg-blue-600" id="roll-dice-button">Roll Dice</button>
+                <button class="game-button bg-purple-500 hover:bg-purple-600" id="reshuffle-hand-button" disabled>Reshuffle Hand</button>
+                <button class="game-button bg-green-500 hover:bg-green-600" id="end-turn-button" disabled>End Turn</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Player 1 Area -->
+    <div class="hand-zone player-1" id="player1-hand">
+        <div class="deck-zone">Deck (<span id="p1-deck-count">0</span>)</div>
+        <div class="discard-zone">Discard (<span id="p1-discard-count">0</span>)</div>
+    </div>
+    <div class="player-area player-1">
+        <div class="board-zone">
+            <div class="zone card-slot" id="p1-support-zone">Support Zone</div>
+            <div class="zone card-slot" id="p1-summons-zone">Summons Zone</div>
+            <div class="zone dice-container" id="p1-dice-area">
+                <p class="font-bold">Dice</p>
+                <div id="p1-dice-display" class="dice-area"></div>
+            </div>
+            <div class="zone card-slot" id="p1-basic-skill-zone">Basic Skill Space</div>
+            <div class="zone active-character-zone" id="p1-active-zone">
+                <div class="card-back">Active Character Zone</div>
+            </div>
+            <div class="zone" style="height: 120px; width: 120px;" id="p1-inactive-zone">Inactive Characters</div>
+        </div>
+    </div>
+
+    <!-- Modals and Status messages -->
+    <div id="status-message-box" class="status-message">
+        <p id="status-text"></p>
+        <div id="status-buttons" class="flex gap-4 justify-center mt-4">
+            <button id="status-ok-button" class="game-button bg-blue-500 hover:bg-blue-600">OK</button>
+        </div>
+    </div>
+
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Game state
+        const gameState = {
+            round: 1,
+            currentPlayer: 1,
+            phase: 'Roll Phase',
+            p1: {
+                deck: [],
+                hand: [],
+                activeCharacter: null,
+                inactiveCharacters: [],
+                dice: [],
+                support: [],
+                summons: [],
+                discard: [],
+                hasEndedRound: false,
+                initialHandDrawn: false,
+                reshuffleUsed: false
+            },
+            p2: {
+                deck: [],
+                hand: [],
+                activeCharacter: null,
+                inactiveCharacters: [],
+                dice: [],
+                support: [],
+                summons: [],
+                discard: [],
+                hasEndedRound: false,
+                initialHandDrawn: false,
+                reshuffleUsed: false
+            }
+        };
+
+        // DOM elements
+        const currentPhaseDisplay = document.getElementById('current-phase-display');
+        const currentPlayerDisplay = document.getElementById('current-player-display');
+        const currentRoundDisplay = document.getElementById('current-round-display');
+        const rollDiceButton = document.getElementById('roll-dice-button');
+        const reshuffleHandButton = document.getElementById('reshuffle-hand-button');
+        const endTurnButton = document.getElementById('end-turn-button');
+        const statusMessageBox = document.getElementById('status-message-box');
+        const statusText = document.getElementById('status-text');
+        const statusButtons = document.getElementById('status-buttons');
+        const player1Hand = document.getElementById('player1-hand');
+        const player2Hand = document.getElementById('player2-hand');
+        const p1DeckCount = document.getElementById('p1-deck-count');
+        const p2DeckCount = document.getElementById('p2-deck-count');
+        const p1DiscardCount = document.getElementById('p1-discard-count');
+        const p2DiscardCount = document.getElementById('p2-discard-count');
+        const p1ActiveZone = document.getElementById('p1-active-zone');
+        const p2ActiveZone = document.getElementById('p2-active-zone');
+        const p1InactiveZone = document.getElementById('p1-inactive-zone');
+        const p2InactiveZone = document.getElementById('p2-inactive-zone');
+        const p1DiceDisplay = document.getElementById('p1-dice-display');
+        const p2DiceDisplay = document.getElementById('p2-dice-display');
+        const p1BasicSkillZone = document.getElementById('p1-basic-skill-zone');
+        const p2BasicSkillZone = document.getElementById('p2-basic-skill-zone');
+        const p1SupportZone = document.getElementById('p1-support-zone');
+        const p2SupportZone = document.getElementById('p2-support-zone');
+
+        // Card and dice data
+        const characterCardData = [
+            { id: 'char1', name: 'Knight', hp: 20, element: 'Red', basicAttack: 4, skills: ['Normal Attack', 'Heavy Strike'], energyMax: 3 },
+            { id: 'char2', name: 'Mage', hp: 15, element: 'Blue', basicAttack: 3, skills: ['Normal Attack', 'Magic Missile'], energyMax: 3 },
+            { id: 'char3', name: 'Rogue', hp: 18, element: 'Green', basicAttack: 5, skills: ['Normal Attack', 'Shadow Step'], energyMax: 3 },
+        ];
+
+        const skillCardData = [
+            { id: 'skill1', name: 'Power Slash', cost: { Red: 3 }, damage: 6, isPowerful: false, element: 'Red' },
+            { id: 'skill2', name: 'Arcane Bolt', cost: { Blue: 3 }, damage: 5, isPowerful: false, element: 'Blue' },
+            { id: 'skill3', name: 'Swift Strike', cost: { Green: 3 }, damage: 6, isPowerful: false, element: 'Green' },
+            { id: 'skill4', name: 'Final Stand', cost: { Red: 5 }, damage: 8, isPowerful: true, element: 'Red' },
+            { id: 'skill5', name: 'Arcane Explosion', cost: { Blue: 5 }, damage: 9, isPowerful: true, element: 'Blue' },
+            { id: 'skill6', name: 'Assassinate', cost: { Green: 5 }, damage: 9, isPowerful: true, element: 'Green' },
+        ];
+
+        const equipmentCardData = [
+            { id: 'equip1', name: 'Sword', type: 'Equipment', cost: { unaligned: 2 }, buff: { type: 'attack', value: 2 } },
+            { id: 'equip2', name: 'Staff', type: 'Equipment', cost: { unaligned: 2 }, buff: { type: 'attack', value: 2 } },
+            { id: 'equip3', name: 'Dagger', type: 'Equipment', cost: { unaligned: 2 }, buff: { type: 'attack', value: 2 } },
+            { id: 'equip4', name: 'Shield', type: 'Equipment', cost: { unaligned: 2 }, buff: { type: 'hp', value: 5 } },
+            { id: 'equip5', name: 'Talisman', type: 'Equipment', cost: { unaligned: 2 }, buff: { type: 'hp', value: 5 } },
+            { id: 'equip6', name: 'Boots', type: 'Equipment', cost: { unaligned: 2 }, buff: { type: 'energy', value: 1 } },
+        ];
+
+        const supportCardData = [
+            { id: 'supp1', name: 'Heal Potion', type: 'Support', cost: { Red: 1, unaligned: 1 }, effect: 'Heal 5 HP at End Phase' },
+            { id: 'supp2', name: 'Armor Up', type: 'Support', cost: { Blue: 2 }, effect: 'Gain 2 DMG resistance' },
+        ];
+
+        const eventCardData = [
+            { id: 'event1', name: 'Fireball', type: 'Event', cost: { Red: 2 }, effect: 'Deal 5 damage to opponent' },
+            { id: 'event2', name: 'Tornado', type: 'Event', cost: { Blue: 2 }, effect: 'Discard 1 card from opponent\'s hand' },
+        ];
+
+        const diceColors = ['Red', 'Blue', 'Green', 'Yellow', 'Purple', 'Orange'];
+
+        // Utility functions
+        function showMessage(text, callback, showOkButton = true) {
+            statusText.textContent = text;
+            statusMessageBox.style.display = 'flex';
+            statusButtons.innerHTML = '';
+            if (showOkButton) {
+                const okButton = document.createElement('button');
+                okButton.classList.add('game-button', 'bg-blue-500', 'hover:bg-blue-600');
+                okButton.id = 'status-ok-button';
+                okButton.textContent = 'OK';
+                okButton.onclick = () => {
+                    statusMessageBox.style.display = 'none';
+                    if (callback) callback();
+                };
+                statusButtons.appendChild(okButton);
+            }
+        }
+
+        function showCustomMessage(text, buttons) {
+            statusText.textContent = text;
+            statusMessageBox.style.display = 'flex';
+            statusButtons.innerHTML = '';
+            buttons.forEach(button => {
+                const btn = document.createElement('button');
+                btn.classList.add('game-button', 'bg-blue-500', 'hover:bg-blue-600');
+                btn.textContent = button.text;
+                btn.onclick = button.action;
+                statusButtons.appendChild(btn);
+            });
+        }
+
+        function rollDie(sides) {
+            return Math.floor(Math.random() * sides) + 1;
+        }
+
+        function getDamageDie() {
+            if (gameState.round <= 2) return 4;
+            if (gameState.round <= 5) return 5;
+            return 6;
+        }
+
+        function createDeck() {
+            const deck = [];
+            deck.push(...characterCardData.map(c => ({...c, type: 'Character'})));
+            deck.push(...skillCardData.filter(s => !s.isPowerful)); // Basic Skills (3)
+            deck.push(...skillCardData.filter(s => s.isPowerful));  // Powerful Skills (6)
+            deck.push(...equipmentCardData); // 6 Equipment
+            deck.push(...supportCardData); // 2 Support
+            deck.push(...eventCardData); // 2 Event
+
+            // Pad the deck to 33 cards with a mix of cards
+            while (deck.length < 33) {
+                const cardTypes = [supportCardData, equipmentCardData, eventCardData];
+                const randomCardType = cardTypes[Math.floor(Math.random() * cardTypes.length)];
+                deck.push(randomCardType[Math.floor(Math.random() * randomCardType.length)]);
+            }
+
+            return shuffle(deck);
+        }
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function renderHand(player, handElement) {
+            handElement.innerHTML = '';
+            player.hand.forEach(card => {
+                const cardDiv = document.createElement('div');
+                cardDiv.classList.add('hand-card');
+                if (card.type) {
+                    cardDiv.classList.add(`${card.type.toLowerCase()}-card`);
+                }
+                cardDiv.innerHTML = `<p class="card-title">${card.name}</p>`;
+                if (card.cost) {
+                    const costString = Object.entries(card.cost).map(([color, amount]) => `${amount} ${color}`).join(', ');
+                    cardDiv.innerHTML += `<p class="card-cost text-xs mt-1">Cost: ${costString}</p>`;
+                }
+                cardDiv.onclick = () => handleCardClick(player, card);
+                handElement.appendChild(cardDiv);
+            });
+        }
+
+        function renderDice(player) {
+            const diceDisplay = player === gameState.p1 ? p1DiceDisplay : p2DiceDisplay;
+            diceDisplay.innerHTML = '';
+            player.dice.forEach((die, index) => {
+                const dieDiv = document.createElement('div');
+                dieDiv.classList.add('die');
+                dieDiv.textContent = die.value;
+                dieDiv.style.backgroundColor = getDieColor(die.color);
+                dieDiv.onclick = () => selectDie(player, index);
+                if (die.selected) {
+                    dieDiv.classList.add('active');
+                }
+                diceDisplay.appendChild(dieDiv);
+            });
+        }
+
+        function selectDie(player, index) {
+            if (player !== gameState[`p${gameState.currentPlayer}`] || gameState.phase !== 'Action Phase') {
+                showMessage("It's not your turn or the wrong phase to select dice.");
+                return;
+            }
+            player.dice[index].selected = !player.dice[index].selected;
+            renderDice(player);
+        }
+
+        function getDieColor(color) {
+            switch(color) {
+                case 'Red': return '#e74c3c';
+                case 'Blue': return '#3498db';
+                case 'Green': return '#2ecc71';
+                case 'Yellow': return '#f1c40f';
+                case 'Purple': return '#9b59b6';
+                case 'Orange': return '#e67e22';
+                case 'unaligned': return '#bdc3c7';
+                default: return '#bdc3c7';
+            }
+        }
+
+        function renderActiveCharacter(player) {
+            const zoneElement = player === gameState.p1 ? p1ActiveZone : p2ActiveZone;
+            zoneElement.innerHTML = '';
+            if (player.activeCharacter) {
+                const charCard = document.createElement('div');
+                charCard.classList.add('active-character-card');
+                if (player === gameState.p2) {
+                    charCard.classList.add('opponent');
+                }
+
+                let skillsHtml = '';
+                if (player.activeCharacter.skills) {
+                    skillsHtml = player.activeCharacter.skills.map(skillName => {
+                        return `<button class="skill-button" data-skill="${skillName}">${skillName}</button>`;
+                    }).join('');
+                }
+
+                charCard.innerHTML = `
+                    <p class="font-bold text-center">${player.activeCharacter.name}</p>
+                    <div class="character-stats">
+                        <span>HP: ${player.activeCharacter.currentHp} / ${player.activeCharacter.hp}</span>
+                        <span>Energy: ${player.activeCharacter.energy} / ${player.activeCharacter.energyMax}</span>
+                    </div>
+                    <div class="hp-bar"><div class="hp-bar-fill" style="width: ${(player.activeCharacter.currentHp / player.activeCharacter.hp) * 100}%;"></div></div>
+                    <div class="character-skills flex flex-col items-center">
+                        ${skillsHtml}
+                    </div>
+                `;
+                zoneElement.appendChild(charCard);
+
+                // Add event listeners for skill buttons
+                const skillButtons = charCard.querySelectorAll('.skill-button');
+                skillButtons.forEach(button => {
+                    button.addEventListener('click', () => useSkill(player, button.dataset.skill));
+                });
+            } else {
+                 zoneElement.innerHTML = `<div class="card-back">Active Character Zone</div>`;
+            }
+        }
+
+        function renderInactiveCharacters(player) {
+            const zoneElement = player === gameState.p1 ? p1InactiveZone : p2InactiveZone;
+            zoneElement.innerHTML = '';
+            player.inactiveCharacters.forEach(character => {
+                const charDiv = document.createElement('div');
+                charDiv.classList.add('hand-card', 'card-back');
+                charDiv.textContent = character.name;
+                charDiv.onclick = () => switchCharacter(player, character);
+                zoneElement.appendChild(charDiv);
+            });
+        }
+
+        function renderSupportZone(player) {
+            const zoneElement = player === gameState.p1 ? p1SupportZone : p2SupportZone;
+            zoneElement.innerHTML = '';
+            player.support.forEach(card => {
+                const cardDiv = document.createElement('div');
+                cardDiv.classList.add('hand-card', 'support-card');
+                cardDiv.textContent = card.name;
+                zoneElement.appendChild(cardDiv);
+            });
+        }
+
+        function startDuel() {
+            // Initial setup for both players
+            gameState.p1.deck = createDeck();
+            gameState.p2.deck = createDeck();
+
+            // Draw opening hands
+            gameState.p1.hand = gameState.p1.deck.splice(0, 5);
+            gameState.p2.hand = gameState.p2.deck.splice(0, 5);
+
+            updateDisplay();
+            showMessage("Both players, choose your starting character and re-roll your hands. Flip a coin to see who goes first!", () => {
+                // Game starts
+                startGameplayLoop();
+            });
+        }
+
+        function startGameplayLoop() {
+            // Simulate character selection for now
+            gameState.p1.activeCharacter = { ...characterCardData[0], currentHp: characterCardData[0].hp, energy: 0 };
+            gameState.p2.activeCharacter = { ...characterCardData[1], currentHp: characterCardData[1].hp, energy: 0 };
+            gameState.p1.inactiveCharacters = characterCardData.slice(1).map(c => ({ ...c, currentHp: c.hp, energy: 0 }));
+            gameState.p2.inactiveCharacters = characterCardData.slice(0, 1).concat(characterCardData.slice(2)).map(c => ({ ...c, currentHp: c.hp, energy: 0 }));
+
+            // Coin flip to decide who goes first (simulated)
+            gameState.currentPlayer = Math.random() < 0.5 ? 1 : 2;
+            updateDisplay();
+            startRollPhase();
+        }
+
+        function updateDisplay() {
+            currentPlayerDisplay.textContent = `Player ${gameState.currentPlayer}`;
+            currentPhaseDisplay.textContent = gameState.phase;
+            currentRoundDisplay.textContent = gameState.round;
+
+            p1DeckCount.textContent = gameState.p1.deck.length;
+            p2DeckCount.textContent = gameState.p2.deck.length;
+            p1DiscardCount.textContent = gameState.p1.discard.length;
+            p2DiscardCount.textContent = gameState.p2.discard.length;
+
+            renderHand(gameState.p1, player1Hand);
+            renderHand(gameState.p2, player2Hand);
+            renderActiveCharacter(gameState.p1);
+            renderActiveCharacter(gameState.p2);
+            renderInactiveCharacters(gameState.p1);
+            renderInactiveCharacters(gameState.p2);
+            renderSupportZone(gameState.p1);
+            renderSupportZone(gameState.p2);
+
+            renderDice(gameState.p1);
+            renderDice(gameState.p2);
+        }
+
+        function startRollPhase() {
+            gameState.phase = 'Roll Phase';
+            rollDiceButton.disabled = false;
+            reshuffleHandButton.disabled = false;
+            endTurnButton.disabled = true;
+            rollDiceButton.textContent = 'Roll Dice';
+            showMessage(`Player ${gameState.currentPlayer}, it's your Roll Phase. Click 'Roll Dice' to start.`);
+        }
+
+        rollDiceButton.addEventListener('click', () => {
+            const currentPlayer = gameState[`p${gameState.currentPlayer}`];
+            const opponentPlayer = gameState[`p${gameState.currentPlayer === 1 ? 2 : 1}`];
+
+            // First roll of the round, roll for both players
+            if (currentPlayer.dice.length === 0) {
+                // Roll new dice
+                for (let i = 0; i < 8; i++) {
+                    const randomColor1 = diceColors[Math.floor(Math.random() * diceColors.length)];
+                    const randomColor2 = diceColors[Math.floor(Math.random() * diceColors.length)];
+                    currentPlayer.dice.push({ value: rollDie(4), color: randomColor1, selected: false });
+                    opponentPlayer.dice.push({ value: rollDie(4), color: randomColor2, selected: false });
+                }
+                rollDiceButton.textContent = 'Re-roll Selected Dice';
+                reshuffleHandButton.disabled = false;
+                endTurnButton.disabled = false;
+                showMessage(`Both players have rolled their dice! Now, Player ${gameState.currentPlayer}, you may re-roll any selected dice or play cards.`, () => {
+                    startActionPhase();
+                });
+            } else {
+                // Re-roll selected dice
+                const diceToReroll = currentPlayer.dice.filter(d => d.selected);
+                if (diceToReroll.length > 0) {
+                    diceToReroll.forEach(die => {
+                        const newColor = diceColors[Math.floor(Math.random() * diceColors.length)];
+                        die.value = rollDie(4);
+                        die.color = newColor;
+                        die.selected = false;
+                    });
+                    // After a re-roll, the button's action is done for this roll phase
+                    rollDiceButton.disabled = true;
+                    showMessage("Re-roll complete! Proceeding to Action Phase.", () => {
+                        startActionPhase();
+                    });
+                } else {
+                    showMessage("You didn't select any dice to re-roll. Proceeding to Action Phase.", () => {
+                        startActionPhase();
+                    });
+                }
+            }
+            updateDisplay(); // Important: call this to reflect the new state immediately
+        });
+
+        reshuffleHandButton.addEventListener('click', () => {
+            handleReshuffleHand();
+        });
+
+        function handleReshuffleHand() {
+            const currentPlayer = gameState[`p${gameState.currentPlayer}`];
+
+            if (currentPlayer.reshuffleUsed) {
+                showMessage("You can only reshuffle your hand once per round.");
+                return;
+            }
+
+            // Put current hand back into deck
+            currentPlayer.deck.push(...currentPlayer.hand);
+            currentPlayer.hand = [];
+
+            // Shuffle deck
+            currentPlayer.deck = shuffle(currentPlayer.deck);
+
+            // Draw new hand
+            drawCard(currentPlayer, 5);
+            currentPlayer.reshuffleUsed = true;
+            reshuffleHandButton.disabled = true;
+
+            updateDisplay();
+            showMessage(`Player ${gameState.currentPlayer} has reshuffled their hand and drawn 5 new cards!`);
+        }
+
+        function startActionPhase() {
+            gameState.phase = 'Action Phase';
+            rollDiceButton.disabled = false; // Enable re-roll
+            endTurnButton.disabled = false;
+            updateDisplay();
+            showMessage(`Player ${gameState.currentPlayer}, it's your turn to take action.`);
+        }
+
+        endTurnButton.addEventListener('click', () => {
+            const currentPlayer = gameState[`p${gameState.currentPlayer}`];
+            const opponent = gameState[`p${gameState.currentPlayer === 1 ? 2 : 1}`];
+
+            if (currentPlayer.hasEndedRound) {
+                showMessage("You have already declared the end of your round.");
+                return;
+            }
+
+            currentPlayer.hasEndedRound = true;
+            showMessage(`Player ${gameState.currentPlayer} has declared the end of their turn.`);
+
+            // A player can end their turn without the opponent having also ended.
+            // Check if the opponent has also ended their turn.
+            if (opponent.hasEndedRound) {
+                startEndPhase();
+            } else {
+                // Switch to the other player's turn
+                gameState.currentPlayer = gameState.currentPlayer === 1 ? 2 : 1;
+                updateDisplay();
+                startActionPhase(); // The new current player starts their action phase
+            }
+        });
+
+        function startEndPhase() {
+            gameState.phase = 'End Phase';
+            const player1 = gameState.p1;
+            const player2 = gameState.p2;
+
+            // Draw cards
+            drawCard(player1, 2);
+            drawCard(player2, 2);
+
+            // Reset flags and dice
+            player1.hasEndedRound = false;
+            player2.hasEndedRound = false;
+            player1.reshuffleUsed = false;
+            player2.reshuffleUsed = false;
+            player1.dice = [];
+            player2.dice = [];
+
+            // Start next round
+            gameState.round++;
+
+            updateDisplay();
+            showMessage("End Phase complete. Starting next round!", () => {
+                startRollPhase();
+            });
+        }
+
+        function drawCard(player, num) {
+            for (let i = 0; i < num; i++) {
+                if (player.deck.length > 0) {
+                    player.hand.push(player.deck.shift());
+                }
+            }
+        }
+
+        function handleCardClick(player, card) {
+            if (gameState.phase !== 'Action Phase' || player !== gameState[`p${gameState.currentPlayer}`]) {
+                showMessage(`It's not your turn or the wrong phase to play this card.`);
+                return;
+            }
+
+            showMessage(`You selected the card: ${card.name}. What would you like to do?`, null, false);
+            const buttons = [];
+
+            if (card.type === 'Character') {
+                buttons.push({ text: 'Switch to this Character', action: () => {
+                    switchCharacter(player, card);
+                }});
+            } else {
+                buttons.push({ text: 'Play this Card', action: () => {
+                    playCard(player, card);
+                }});
+            }
+
+            buttons.push({ text: 'Tuning', action: () => {
+                tuning(player, card);
+            }});
+
+            buttons.push({ text: 'Cancel', action: () => {
+                statusMessageBox.style.display = 'none';
+            }});
+
+            showCustomMessage(`You selected the card: ${card.name}`, buttons);
+        }
+
+        function useSkill(player, skillName) {
+             if (gameState.phase !== 'Action Phase' || player !== gameState[`p${gameState.currentPlayer}`]) {
+                showMessage(`It's not your turn or the wrong phase to use a skill.`);
+                return;
+            }
+
+            // Normal attack logic
+            const normalAttack = player.activeCharacter.basicAttack;
+            const damageDie = getDamageDie();
+            const damage = normalAttack + rollDie(damageDie);
+
+            const opponent = gameState[`p${gameState.currentPlayer === 1 ? 2 : 1}`];
+
+            opponent.activeCharacter.currentHp -= damage;
+            player.activeCharacter.energy++;
+
+            showMessage(`Player ${player === gameState.p1 ? 1 : 2}'s ${player.activeCharacter.name} used ${skillName} dealing ${damage} damage to Player ${gameState.currentPlayer === 1 ? 2 : 1}'s ${opponent.activeCharacter.name}!`);
+            checkVictoryCondition();
+            updateDisplay();
+
+            // End turn after combat action
+            gameState.currentPlayer = gameState.currentPlayer === 1 ? 2 : 1;
+            updateDisplay();
+            showMessage(`Player ${gameState.currentPlayer}, it's your turn to act.`);
+        }
+
+        function playCard(player, card) {
+            // Check for cost
+            const diceToPay = player.dice.filter(d => d.selected);
+            if (diceToPay.length < Object.values(card.cost).reduce((a, b) => a + b, 0)) {
+                showMessage("Not enough dice selected to pay the cost.");
+                return;
+            }
+
+            // Pay the cost with dice
+            // Simple implementation: just remove the selected dice
+            const newDice = player.dice.filter(d => !d.selected);
+            player.dice = newDice;
+
+            // Card effects
+            if (card.type === 'Equipment') {
+                 showMessage(`You played ${card.name} on ${player.activeCharacter.name}.`);
+                 // Simple buff implementation
+                 if (card.buff.type === 'attack') player.activeCharacter.basicAttack += card.buff.value;
+                 if (card.buff.type === 'hp') player.activeCharacter.hp += card.buff.value;
+            } else if (card.type === 'Support') {
+                player.support.push(card);
+                showMessage(`You played ${card.name}. It is now in your support zone.`);
+            } else if (card.type === 'Event') {
+                 showMessage(`You played ${card.name}.`);
+            }
+
+            // Remove card from hand
+            player.hand = player.hand.filter(c => c.id !== card.id);
+            player.discard.push(card);
+
+            updateDisplay();
+            showMessage(`You played ${card.name}. Fast Action completed. You may take another action.`);
+        }
+
+        function tuning(player, card) {
+            // Tuning requires 1 card discard and 1 die to be selected.
+            const dieToTune = player.dice.find(d => d.selected);
+            if (!dieToTune) {
+                showMessage("Please select one die to tune.");
+                return;
+            }
+
+            // Remove card from hand and discard it
+            player.hand = player.hand.filter(c => c.id !== card.id);
+            player.discard.push(card);
+
+            // Change die color
+            dieToTune.color = player.activeCharacter.element;
+            dieToTune.selected = false;
+
+            updateDisplay();
+            showMessage(`You discarded a card to tune one die to ${player.activeCharacter.element}.`);
+        }
+
+        function switchCharacter(player, newChar) {
+            if (gameState.phase !== 'Action Phase' || player !== gameState[`p${gameState.currentPlayer}`]) {
+                showMessage(`It's not your turn or the wrong phase to switch characters.`);
+                return;
+            }
+
+            // Combat Action: spend 1 die of your choice
+            const dieToSpend = player.dice.find(d => d.selected);
+            if (!dieToSpend) {
+                 showMessage("You must select one die to spend to switch characters.");
+                 return;
+            }
+            player.dice = player.dice.filter(d => !d.selected);
+
+            // Move current active to inactive list
+            player.inactiveCharacters.push(player.activeCharacter);
+            player.activeCharacter = newChar;
+            player.inactiveCharacters = player.inactiveCharacters.filter(c => c.id !== newChar.id);
+
+            updateDisplay();
+            showMessage(`Player ${player === gameState.p1 ? 1 : 2} switched to ${newChar.name}.`);
+
+            // End turn after combat action
+            gameState.currentPlayer = gameState.currentPlayer === 1 ? 2 : 1;
+            updateDisplay();
+            showMessage(`Player ${gameState.currentPlayer}, it's your turn to act.`);
+        }
+
+        function checkVictoryCondition() {
+            const opponent = gameState[`p${gameState.currentPlayer === 1 ? 2 : 1}`];
+            if (opponent.activeCharacter.currentHp <= 0) {
+                let anyCharacterLeft = opponent.inactiveCharacters.some(c => c.currentHp > 0);
+                if (!anyCharacterLeft) {
+                    showMessage(`Player ${gameState.currentPlayer} has won the duel!`, () => {
+                        window.location.reload();
+                    });
+                } else {
+                    showMessage(`Player ${gameState.currentPlayer === 1 ? 2 : 1}'s active character has been defeated. They must choose a new active character.`, () => {
+                        // Logic to let the player choose a new character goes here
+                        // For now, auto-switch to the first available character
+                        const newActive = opponent.inactiveCharacters.find(c => c.currentHp > 0);
+                        if (newActive) {
+                            opponent.activeCharacter = newActive;
+                            opponent.inactiveCharacters = opponent.inactiveCharacters.filter(c => c.id !== newActive.id);
+                        } else {
+                            // Should not happen if previous logic is correct
+                            showMessage(`Player ${gameState.currentPlayer} has won the duel!`, () => {
+                                window.location.reload();
+                            });
+                        }
+                        updateDisplay();
+                    });
+                }
+            }
+        }
+
+        // Initialize game
+        startDuel();
+    });
+</script>
+</body>
+</html>
